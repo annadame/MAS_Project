@@ -1,0 +1,7 @@
+<?xml version="1.0" ?><Session>
+<NegotiationOutcome exception="Failed to execute protocol: null" currentTime="Wed Feb 16 14:02:42 CET 2022" lastAction="(Offer  bid:Bid[Laptop: Dell, Harddisk: 120 Gb, External Monitor: 23'' LCD])" bids="7" runtime="71.8582181" deadline="60rounds">
+<resultsOfAgent agent="BoulwareNegotiationParty" utilspace="etc/templates/anac/y2011/Laptop/laptop_util1.xml" agentClass="negotiator.parties.BoulwareNegotiationParty" finalUtility="0.0" discountedUtility="0.0" discount="1.0">
+</resultsOfAgent>
+<resultsOfAgent agent="UIAgent" utilspace="etc/templates/anac/y2011/Laptop/laptop_seller_utility.xml" agentClass="agents.UIAgent" finalUtility="0.0" discountedUtility="0.0" discount="0.42441038">
+</resultsOfAgent>
+</NegotiationOutcome></Session>
