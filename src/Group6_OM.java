@@ -14,59 +14,71 @@ public class Group6_OM extends OpponentModel {
 
     private ArrayList<Bid> bidHistory;
 
-    // Frequency model = HashMap, Key = Tuple<Issue, Value>, value = frequency
-    // Counting per issue which category is voted, (<Issue, Value>, Freq)
-    private HashMap<Tuple<Integer, Value>, Integer> frequencyModel;
-
-    private HashMap<Tuple<Integer, Value>, Double> valueModel;
-    private HashMap<Tuple<Integer, Value>, Double> issueModel;
+    // HashMap mapping issues to object containing information like values and frequencies
+    private HashMap<Integer, IssueInformation> frequencyModel;
 
     @Override
     public void init(NegotiationSession negotiationSession,
                      Map<String, Double> parameters) {
         super.init(negotiationSession, parameters);
+
         bidHistory = new ArrayList<>();
         frequencyModel = new HashMap<>();
-        valueModel = new HashMap<>();
-        issueModel = new HashMap<>();
     }
 
     @Override
     protected void updateModel(Bid bid, double time) {
-        // Possibly add maximum amount of bids as parameter (100 in CUHK OM)
+        // Possibly add maximum amount of bids as parameter (100 in CUHK OM, maybe have it depend on time passed in negotiation)
         bidHistory.add(bid);
         updateFrequencyModel(bid);
-        updatePreferences(bid);
+        updatePreferences();
     }
 
     private void updateFrequencyModel(Bid bid) {
         HashMap<Integer, Value> currentIssues = bid.getValues();
 
         // For every issue in the bid, update the frequency in the frequencyModel
-        currentIssues.forEach((issueId, value) -> updateSingularFrequency(issueId, value));
+        currentIssues.forEach((issueId, value) -> frequencyModel.get(issueId).update(value));
     }
 
-    private void updateSingularFrequency(Integer issueId, Value value) {
-        Tuple<Integer, Value> key = new Tuple<>(issueId, value);
-        if (!frequencyModel.containsKey(key)) {
-            // If the frequencyModel does not yet contain the issue/value combination, add it to the HashMap and set its value to 1
-            frequencyModel.put(key, 1);
-        } else {
-            // If the frequencyModel does contain the issue/value combination, increase its frequency by one
-            frequencyModel.put(key, frequencyModel.get(key) + 1);
-        }
-    }
-
-    private void updatePreferences(Bid bid) {
+    private void updatePreferences() {
         // Update value weights using frequencyModel, take highest frequency and divide it by amount of bids/rounds in total
-        
-        // Update issue weights take value weights of highest and divide by total value weights
+        // Loop through frequencyModel, for each issue, sum up frequencies and keep track of highest frequency,
+        // finally, divide highest frequency by total frequency
+        double totalRelativeValue = 0D;
+        for (Map.Entry<Integer, IssueInformation> entry : frequencyModel.entrySet())
+        {
+            totalRelativeValue += entry.getValue().getHighestRelativeValue(bidHistory.size()).get2();
+        }
 
+        // Update issue weights take value weights of highest and divide by total value weights
+        for (Map.Entry<Integer, IssueInformation> entry : frequencyModel.entrySet())
+        {
+            entry.getValue().setWeight(entry.getValue().getHighestRelativeValue(bidHistory.size()).get2() / totalRelativeValue);
+        }
     }
 
     @Override
     public double getBidEvaluation(Bid bid) {
+        HashMap<Integer, Value> currentIssues = bid.getValues();
+        double expectedUtility = 0D;
+        double weight;
+        double totalWeight = 0D;
+
+        // Get TotalWeight from IssueInformation objects
+        for (Map.Entry<Integer, IssueInformation> entry : frequencyModel.entrySet())
+        {
+            totalWeight += entry.getValue().getWeight();
+        }
+
+        // Get RelativeValue for current Issue,
+        for (Map.Entry<Integer, Value> entry : currentIssues.entrySet())
+        {
+            weight = frequencyModel.get(entry.getKey()).getWeight();
+            expectedUtility += (weight / totalWeight) * frequencyModel.get(entry.getKey()).getRelativeValue(entry.getValue(), bidHistory.size());
+        }
+
         // Return estimated utility value for opponent bid
-        return 0D;
+        return expectedUtility;
     }
 }
