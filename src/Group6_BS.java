@@ -20,12 +20,15 @@ public class Group6_BS extends OfferingStrategy {
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel opponentModel, OMStrategy omStrategy,
                      Map<String, Double> parameters) throws Exception {
+        // Call default init of super class
         super.init(negotiationSession, opponentModel, omStrategy, parameters);
+
+        // Determine all possible bids of the negotiation
         possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
         negotiationSession.setOutcomeSpace(possibleAgentBids);
 
-        startingBidUtility = 0.8;
-        //TODO make targetUtility value dynamical in between stages
+        startingBidUtility = 0.8; // Maybe change to 1
+        //TODO make targetUtility value dynamical in between stages, dependent on concession factor
         targetUtility = 0.8;
         maxUtilityRange = 1.0;
         stageOneAllowedTime = 0.2;
@@ -33,6 +36,7 @@ public class Group6_BS extends OfferingStrategy {
         stageThreeAllowedTime = 0.85;
         scareTacticUtility = 0.9;
 
+        // Get starting bid by choosing a bid from all possible bids which is near desired starting utility
         startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
     }
 
@@ -44,7 +48,7 @@ public class Group6_BS extends OfferingStrategy {
     @Override
     public BidDetails determineNextBid() {
         double timePassed = negotiationSession.getTimeline().getTime();
-        System.out.println(timePassed);
+        System.out.println(timePassed); // TODO: Delete once not necessary anymore
 
         if (timePassed < stageOneAllowedTime /* TODO add here when opponent model is accurate enough, discuss with Rick and Marije */) {
             // stage 1 hardheaded bid while determining opponent model + strategy
@@ -68,9 +72,10 @@ public class Group6_BS extends OfferingStrategy {
             double bestOpponentUtility = 0.0;
             BidDetails bestOpponentBid = null;
             for (BidDetails agentBid: agentBidsInRange) {
-                double opponentUtility = opponentPossibleBids.getUtility(agentBid.getBid()); // get the utility of the opponent for these certain values
+                // Get the utility of the opponent for these certain values of issues
+                double opponentUtility = opponentPossibleBids.getUtility(agentBid.getBid());
 
-                // save the highest utility and corresponding bid
+                // Save the highest utility for opponent and corresponding bid
                 if (opponentUtility > bestOpponentUtility) {
                     bestOpponentBid = agentBid;
                     bestOpponentUtility = opponentUtility;
