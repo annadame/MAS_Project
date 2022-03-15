@@ -1,15 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <boaPartiesList>
-    <boaparties partyName="newParty">
+    <boaparties partyName="Group 6 Party">
         <properties/>
         <biddingStrategy>
-            <item classpath="C:\Users\Renzo\Desktop\Multi-agent systems\Lab\MAS_Project\out\production\MAS_Project\Group6_BS.class"/>
+            <item classpath="negotiator.boaframework.offeringstrategy.anac2011.HardHeaded_Offering"/>
+        </biddingStrategy>
+        <acceptanceStrategy>
+            <item classpath="negotiator.boaframework.acceptanceconditions.anac2011.AC_HardHeaded"/>
+        </acceptanceStrategy>
+        <opponentModel>
+            <item classpath="C:\GIT\MAS_Project\out\production\MAS_Project\Group6_OM.class"/>
+        </opponentModel>
+        <omStrategy>
+            <item classpath="negotiator.boaframework.omstrategy.NTFTstrategy"/>
+        </omStrategy>
+    </boaparties>
+    <boaparties partyName="opponentParty">
+        <properties/>
+        <biddingStrategy>
+            <item classpath="negotiator.boaframework.offeringstrategy.anac2010.AgentK_Offering"/>
         </biddingStrategy>
         <acceptanceStrategy>
             <item classpath="negotiator.boaframework.acceptanceconditions.anac2010.AC_AgentK"/>
         </acceptanceStrategy>
         <opponentModel>
             <item classpath="negotiator.boaframework.opponentmodel.AgentLGModel"/>
+        </opponentModel>
+        <omStrategy>
+            <item classpath="negotiator.boaframework.omstrategy.NTFTstrategy"/>
+        </omStrategy>
+    </boaparties>
+    <boaparties partyName="Group 6 - without">
+        <properties/>
+        <biddingStrategy>
+            <item classpath="negotiator.boaframework.offeringstrategy.anac2011.HardHeaded_Offering"/>
+        </biddingStrategy>
+        <acceptanceStrategy>
+            <item classpath="negotiator.boaframework.acceptanceconditions.anac2011.AC_HardHeaded"/>
+        </acceptanceStrategy>
+        <opponentModel>
+            <item classpath="negotiator.boaframework.opponentmodel.NashFrequencyModel"/>
         </opponentModel>
         <omStrategy>
             <item classpath="negotiator.boaframework.omstrategy.NTFTstrategy"/>
