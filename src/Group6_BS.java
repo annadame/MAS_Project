@@ -1,17 +1,16 @@
-import genius.core.Bid;
 import genius.core.bidding.BidDetails;
 import genius.core.boaframework.*;
+import genius.core.misc.Range;
 import genius.core.utility.AbstractUtilitySpace;
 
-import java.util.concurrent.TimeUnit;
-
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Group6_BS extends OfferingStrategy {
     private SortedOutcomeSpace possibleAgentBids;
     private BidDetails startingBid;
-    private double tresholdUtility;
+    private double targetUtility;
+    private double maxUtilityRange;
     private double startingBidUtility;
     private double stageOneAllowedTime;
     private double stageTwoAllowedTime;
@@ -26,13 +25,13 @@ public class Group6_BS extends OfferingStrategy {
         negotiationSession.setOutcomeSpace(possibleAgentBids);
 
         startingBidUtility = 0.8;
-        //TODO make tresholdUtility value dynamical in between stages
-        tresholdUtility = 0.8;
+        //TODO make targetUtility value dynamical in between stages
+        targetUtility = 0.8;
+        maxUtilityRange = 1.0;
         stageOneAllowedTime = 0.2;
         stageTwoAllowedTime = 0.8;
         stageThreeAllowedTime = 0.85;
         scareTacticUtility = 0.9;
-
 
         startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
     }
@@ -47,7 +46,7 @@ public class Group6_BS extends OfferingStrategy {
         double timePassed = negotiationSession.getTimeline().getTime();
         System.out.println(timePassed);
 
-        if (timePassed < stageOneAllowedTime /* TODO add here when opponentmodel is accurate enough, discuss with Rick and Marije */) {
+        if (timePassed < stageOneAllowedTime /* TODO add here when opponent model is accurate enough, discuss with Rick and Marije */) {
             // stage 1 hardheaded bid while determining opponent model + strategy
             return startingBid;
         } else if (timePassed < stageTwoAllowedTime) {
@@ -64,8 +63,23 @@ public class Group6_BS extends OfferingStrategy {
             return possibleAgentBids.getBidNearUtility(scareTacticUtility);
         } else {
             // stage 4
-            //BidDetails bid = omStrategy.getBid(opponentModel.getOpponentUtilitySpace(), tresholdUtility);
-            return null;
+            List<BidDetails> agentBidsInRange = possibleAgentBids.getBidsinRange(new Range(targetUtility, maxUtilityRange));
+            AbstractUtilitySpace opponentPossibleBids = opponentModel.getOpponentUtilitySpace();
+            double bestOpponentUtility = 0.0;
+            BidDetails bestOpponentBid = null;
+            for (BidDetails agentBid: agentBidsInRange) {
+                double opponentUtility = opponentPossibleBids.getUtility(agentBid.getBid()); // get the utility of the opponent for these certain values
+
+                // save the highest utility and corresponding bid
+                if (opponentUtility > bestOpponentUtility) {
+                    bestOpponentBid = agentBid;
+                    bestOpponentUtility = opponentUtility;
+                }
+            }
+
+            maxUtilityRange = targetUtility;
+            targetUtility -= 0.05; //TODO: Make dynamically based on time
+            return bestOpponentBid;
         }
     }
 
