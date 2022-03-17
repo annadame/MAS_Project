@@ -28,14 +28,12 @@ public class Group6_OM extends OpponentModel {
         // Fill FrequencyModel with the issues of the current negotiation
         for (Issue issue : this.negotiationSession.getIssues()) {
             IssueDiscrete issue2 = (IssueDiscrete) issue;
-
             frequencyModel.put(issue2.getNumber(), new IssueInformation(issue2.getValues()));
         }
     }
 
     @Override
     protected void updateModel(Bid bid, double time) {
-        // Possibly add maximum amount of bids as parameter (100 in CUHK OM, maybe have it depend on time passed in negotiation)
         bidHistory.add(bid);
         updateFrequencyModel(bid);
         updatePreferences();

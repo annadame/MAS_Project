@@ -1,5 +1,6 @@
 import genius.core.bidding.BidDetails;
 import genius.core.boaframework.*;
+import genius.core.list.Tuple;
 import genius.core.misc.Range;
 import genius.core.utility.AbstractUtilitySpace;
 
@@ -16,6 +17,7 @@ public class Group6_BS extends OfferingStrategy {
     private double stageTwoAllowedTime;
     private double stageThreeAllowedTime;
     private double scareTacticUtility;
+    private Group6_SAS helper;
 
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel opponentModel, OMStrategy omStrategy,
@@ -23,6 +25,7 @@ public class Group6_BS extends OfferingStrategy {
         // Call default init of super class
         super.init(negotiationSession, opponentModel, omStrategy, parameters);
 
+        this.helper = new Group6_SAS(negotiationSession);
         // Determine all possible bids of the negotiation
         possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
         negotiationSession.setOutcomeSpace(possibleAgentBids);
@@ -47,6 +50,12 @@ public class Group6_BS extends OfferingStrategy {
 
     @Override
     public BidDetails determineNextBid() {
+        // Update SAS for concession factor with evaluation of last opponent bid
+        double opponentBidEvaluation = opponentModel.getBidEvaluation(this.negotiationSession.getOpponentBidHistory().getLastBid());
+        if (opponentBidEvaluation != -1) {
+            helper.update(opponentBidEvaluation);
+        }
+
         double timePassed = negotiationSession.getTimeline().getTime();
         System.out.println(timePassed); // TODO: Delete once not necessary anymore
 
@@ -55,6 +64,9 @@ public class Group6_BS extends OfferingStrategy {
             return startingBid;
         } else if (timePassed < stageTwoAllowedTime) {
             // stage 2 Perlin-noise tactic while conceding based on opponent conceding factor
+            // concessionFactor.get1() = concession factor, concessionfactor.get2() = certainty factor
+            Tuple<Double, Double> concessionFactor = helper.getOpponentConcessionFactor();
+
             if (true /*TODO add method for determining if opponent model is reliable and return bool*/) {
                 /*TODO discuss how we get concedingfactor of opponent (from opponent model strategy?)*/
             } else {
@@ -68,12 +80,11 @@ public class Group6_BS extends OfferingStrategy {
         } else {
             // stage 4
             List<BidDetails> agentBidsInRange = possibleAgentBids.getBidsinRange(new Range(targetUtility, maxUtilityRange));
-            AbstractUtilitySpace opponentPossibleBids = opponentModel.getOpponentUtilitySpace();
             double bestOpponentUtility = 0.0;
             BidDetails bestOpponentBid = null;
             for (BidDetails agentBid: agentBidsInRange) {
                 // Get the utility of the opponent for these certain values of issues
-                double opponentUtility = opponentPossibleBids.getUtility(agentBid.getBid());
+                double opponentUtility = opponentModel.getBidEvaluation(agentBid.getBid());
 
                 // Save the highest utility for opponent and corresponding bid
                 if (opponentUtility > bestOpponentUtility) {
