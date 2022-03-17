@@ -56,7 +56,7 @@ public class Group6_BS extends OfferingStrategy {
         }
 
         double timePassed = negotiationSession.getTimeline().getTime();
-        System.out.println(timePassed); // TODO: Delete once not necessary anymore
+        //System.out.println(timePassed); // TODO: Delete once not necessary anymore
 
         if (timePassed < stageOneAllowedTime /* TODO add here when opponent model is accurate enough, discuss with Rick and Marije */) {
             // stage 1 hardheaded bid while determining opponent model + strategy
@@ -64,14 +64,24 @@ public class Group6_BS extends OfferingStrategy {
         } else if (timePassed < stageTwoAllowedTime) {
             // stage 2 Perlin-noise tactic while conceding based on opponent conceding factor
             // concessionFactor.get1() = concession factor, concessionfactor.get2() = certainty factor
-            Tuple<Double, Double> concessionFactor = helper.getOpponentConcessionFactor();
+            Tuple<Double, Double> opponentConcessionFactor = helper.getOpponentConcessionFactor();
+            System.out.println(opponentConcessionFactor.get1());
+
+            // Base concession factor
+            double concessionFactor = (Math.pow(1.25, timePassed) - 1);
 
             if (true /*TODO add method for determining if opponent model is reliable and return bool*/) {
                 /*TODO discuss how we get concedingfactor of opponent (from opponent model strategy?)*/
-            } else {
-                /*TODO determine what to do if there is no (reliable) opponent model*/
+                // Add influence of concession factor of opponent
+                if (opponentConcessionFactor.get1() < concessionFactor) {
+                    concessionFactor = opponentConcessionFactor.get1();
+                }
             }
-            return startingBid;
+
+            targetUtility = 1 - concessionFactor;
+            // Add Perlin(or something like it) noise
+            targetUtility = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 20);
+            return possibleAgentBids.getBidNearUtility(targetUtility);
         } else if (timePassed < stageThreeAllowedTime) {
             // stage 3
             /*TODO possibly make scareTacticUtility a dynamic value*/
@@ -94,6 +104,7 @@ public class Group6_BS extends OfferingStrategy {
 
             maxUtilityRange = targetUtility;
             targetUtility -= 0.05; //TODO: Make dynamically based on time
+            targetUtility -= (Math.pow(1.65, timePassed) - 1) / 10;
             return bestOpponentBid;
         }
     }
