@@ -1,19 +1,32 @@
 import genius.core.boaframework.NegotiationSession;
-import genius.core.boaframework.SharedAgentState;
 import genius.core.list.Tuple;
 
 import java.util.ArrayList;
+import java.util.Map;
 
-public class Group6_SAS extends SharedAgentState {
+// Does not extend SharedAgentState since it cant have a private constructor
+public class Group6_SAS {
 
-    NegotiationSession session;
-    ArrayList<Double> estimatedUtilities;
+    private static Group6_SAS INSTANCE;
 
-    final int LAST_X_ROUNDS = 5;
+    private NegotiationSession session;
+    private Map<String, Double> parameters;
+    private ArrayList<Double> estimatedUtilities;
 
-    public Group6_SAS(NegotiationSession session) {
+    private final int LAST_X_ROUNDS = 5;
+
+    private Group6_SAS(NegotiationSession session, Map<String, Double> parameters) {
         this.session = session;
+        this.parameters = parameters;
         this.estimatedUtilities = new ArrayList<>();
+    }
+
+    public static Group6_SAS getInstance(NegotiationSession session, Map<String, Double> parameters) {
+        if (INSTANCE == null) {
+            INSTANCE = new Group6_SAS(session, parameters);
+        }
+
+        return INSTANCE;
     }
 
     // Call every round from BiddingStrategy to keep track of estimated opponent utility over the negotiation

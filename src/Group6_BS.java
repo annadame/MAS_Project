@@ -2,13 +2,13 @@ import genius.core.bidding.BidDetails;
 import genius.core.boaframework.*;
 import genius.core.list.Tuple;
 import genius.core.misc.Range;
-import genius.core.utility.AbstractUtilitySpace;
 
 import java.util.List;
 import java.util.Map;
 
 public class Group6_BS extends OfferingStrategy {
     private SortedOutcomeSpace possibleAgentBids;
+    private Group6_SAS helper;
     private BidDetails startingBid;
     private double targetUtility;
     private double maxUtilityRange;
@@ -17,7 +17,6 @@ public class Group6_BS extends OfferingStrategy {
     private double stageTwoAllowedTime;
     private double stageThreeAllowedTime;
     private double scareTacticUtility;
-    private Group6_SAS helper;
 
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel opponentModel, OMStrategy omStrategy,
@@ -25,7 +24,7 @@ public class Group6_BS extends OfferingStrategy {
         // Call default init of super class
         super.init(negotiationSession, opponentModel, omStrategy, parameters);
 
-        this.helper = new Group6_SAS(negotiationSession);
+        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
         // Determine all possible bids of the negotiation
         possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
         negotiationSession.setOutcomeSpace(possibleAgentBids);

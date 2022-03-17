@@ -8,9 +8,15 @@ import java.util.Map;
 
 public class Group6_OMS extends OMStrategy {
 
+    // TODO: remove if SAS is not needed here:
+    private Group6_SAS helper;
+
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel model, Map<String, Double> parameters) {
         super.init(negotiationSession, model, parameters);
+        // TODO: remove if SAS is not needed here:
+        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
+
     }
 
     @Override

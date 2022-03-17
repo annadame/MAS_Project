@@ -5,6 +5,8 @@ import genius.core.boaframework.*;
 import java.util.Map;
 
 public class Group6_AS extends AcceptanceStrategy {
+
+    private Group6_SAS helper;
     private double thresholdUtility;
     private double concedingFactor;
     private Map<String, Double> parameters;
@@ -16,6 +18,8 @@ public class Group6_AS extends AcceptanceStrategy {
         thresholdUtility = 1.0;
         concedingFactor = 0.02;
         this.parameters = parameters;
+        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
+
     }
 
     @Override
