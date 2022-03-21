@@ -29,14 +29,13 @@ public class Group6_BS extends OfferingStrategy {
         possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
         negotiationSession.setOutcomeSpace(possibleAgentBids);
 
-        startingBidUtility = 1.0; // Maybe change to 1
-        //TODO make targetUtility value dynamical in between stages, dependent on concession factor
+        startingBidUtility = 1.0;
         targetUtility = 1.0;
         maxUtilityRange = 1.0;
         stageOneAllowedTime = 0.2;
         stageTwoAllowedTime = 0.8;
         stageThreeAllowedTime = 0.85;
-        scareTacticUtility = 0.9;
+        scareTacticUtility = 0.98;
 
         // Get starting bid by choosing a bid from all possible bids which is near desired starting utility
         startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
@@ -54,64 +53,44 @@ public class Group6_BS extends OfferingStrategy {
         if (opponentBidEvaluation != -1) {
             helper.update(opponentBidEvaluation);
         }
-
         double timePassed = negotiationSession.getTimeline().getTime();
-        //System.out.println(timePassed); // TODO: Delete once not necessary anymore
 
         if (timePassed < stageOneAllowedTime /* TODO add here when opponent model is accurate enough, discuss with Rick and Marije */) {
-            // stage 1 hardheaded bid while determining opponent model + strategy
+            // Stage 1
+            System.out.println("Stage 1 = " + startingBid.getMyUndiscountedUtil());
             return startingBid;
         } else if (timePassed < stageTwoAllowedTime) {
-            // stage 2 Perlin-noise tactic while conceding based on opponent conceding factor
-            // concessionFactor.get1() = concession factor, concessionfactor.get2() = certainty factor
+            // Stage 2
             Tuple<Double, Double> opponentConcessionFactor = helper.getOpponentConcessionFactor();
-            System.out.println(opponentConcessionFactor.get1());
 
-            // Base concession factor
-            //double concessionFactor = (Math.pow(1.25, timePassed) - 1) / 10;
-            double concessionFactor = 0.0;
+            // Base concession factor on time
+            double concessionFactor = (Math.pow(1.25, timePassed) - 1) / 100;
 
             if (true /*TODO add method for determining if opponent model is reliable and return bool*/) {
-                /*TODO discuss how we get concedingfactor of opponent (from opponent model strategy?)*/
-                // Add influence of concession factor of opponent
-                if (opponentConcessionFactor.get1() > concessionFactor && opponentConcessionFactor.get1() > 0) {
-                    concessionFactor = opponentConcessionFactor.get1() / 2;
+                // If opponent is more hardheaded than us, then we get his concession factor decreased by 10%, to be even more hardheaded
+                if (opponentConcessionFactor.get1() < concessionFactor) {
+                    concessionFactor = opponentConcessionFactor.get1() / 1.1;
                 }
             }
+            targetUtility = 1 - concessionFactor;
 
-            targetUtility = targetUtility - concessionFactor;
-            // Add Perlin(or something like it) noise
-            //double targetUtilityWithNoise = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 20);
-            //System.out.println("utility stage 2:" + targetUtility);
-            //return possibleAgentBids.getBidNearUtility(targetUtilityWithNoise);
-            return possibleAgentBids.getBidNearUtility(targetUtility);
+            // Add noise
+            double noise = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 100);
+
+            System.out.println("Stage 2 = " + possibleAgentBids.getBidNearUtility(noise).getMyUndiscountedUtil());
+            return possibleAgentBids.getBidNearUtility(noise);
         } else if (timePassed < stageThreeAllowedTime) {
-            // stage 3
+            // Stage 3
             /*TODO possibly make scareTacticUtility a dynamic value*/
+            System.out.println("Stage 3 = " + scareTacticUtility);
             return possibleAgentBids.getBidNearUtility(scareTacticUtility);
         } else {
-            // stage 4
-            List<BidDetails> agentBidsInRange = possibleAgentBids.getBidsinRange(new Range(targetUtility, maxUtilityRange));
-            double bestOpponentUtility = 0.0;
-            BidDetails bestOpponentBid = null;
-            for (BidDetails agentBid: agentBidsInRange) {
-                // Get the utility of the opponent for these certain values of issues
-                double opponentUtility = opponentModel.getBidEvaluation(agentBid.getBid());
-
-                // Save the highest utility for opponent and corresponding bid
-                if (opponentUtility > bestOpponentUtility) {
-                    bestOpponentBid = agentBid;
-                    bestOpponentUtility = opponentUtility;
-                }
-            }
-
-            //lower maximum checked utility of agent so not all bids that have been previously checked are checked again
+            // Stage 4
+            BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(new Range(targetUtility, maxUtilityRange)));
             maxUtilityRange = targetUtility;
-            targetUtility -= 0.01; //TODO: Make dynamically based on time, delete this line later
+            targetUtility = 1 - (Math.pow(1.04, 100 - ((1 - timePassed) * 1000)) / 100);
 
-            System.out.println("utility stage 4:" + targetUtility);
-            //TODO check this for what works good, now doesn't work correctly yet
-            //targetUtility -= (Math.pow(1.65, timePassed) - 1) / 10;
+            System.out.println("Stage 4 = " + bestOpponentBid.getMyUndiscountedUtil());
             return bestOpponentBid;
         }
     }

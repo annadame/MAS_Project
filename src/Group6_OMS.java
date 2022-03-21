@@ -8,21 +8,26 @@ import java.util.Map;
 
 public class Group6_OMS extends OMStrategy {
 
-    // TODO: remove if SAS is not needed here:
-    private Group6_SAS helper;
-
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel model, Map<String, Double> parameters) {
         super.init(negotiationSession, model, parameters);
-        // TODO: remove if SAS is not needed here:
-        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
-
     }
 
     @Override
     public BidDetails getBid(List<BidDetails> bidsInRange) {
-        // TODO: Place part of bidding strategy in here that determines the bid from a range of bids
-        return null;
+        double bestOpponentUtility = 0.0;
+        BidDetails bestOpponentBid = null;
+        for (BidDetails agentBid: bidsInRange) {
+            // Get the utility of the opponent for these certain values of issues
+            double opponentUtility = model.getBidEvaluation(agentBid.getBid());
+
+            // Save the highest utility for opponent and corresponding bid
+            if (opponentUtility > bestOpponentUtility) {
+                bestOpponentBid = agentBid;
+                bestOpponentUtility = opponentUtility;
+            }
+        }
+        return bestOpponentBid;
     }
 
     @Override
