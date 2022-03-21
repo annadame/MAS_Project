@@ -63,6 +63,11 @@ public class Group6_OM extends OpponentModel {
 
     @Override
     public double getBidEvaluation(Bid bid) {
+        // In case we make first bid there is no bid to evaluate, return 1
+        if (bidHistory.isEmpty()) {
+            return 1.0D;
+        }
+
         HashMap<Integer, Value> currentIssues = bid.getValues();
         double expectedUtility = 0D;
         double weight;
