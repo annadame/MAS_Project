@@ -36,6 +36,7 @@ public class Group6_SAS {
     }
 
     public Tuple<Double, Double> getOpponentConcessionFactor() {
+        // DEPRECATED
         // In case this is called when the opponent has not made any bids
         if (this.estimatedUtilities.isEmpty()) {
             return new Tuple<>(0.0D, 0.0D);
@@ -54,10 +55,33 @@ public class Group6_SAS {
         // Number is in percentages, so 0.05 would mean that the estimated utility lowered on average 5 percent every round
         // The second number is the average utility of the whole negotiation divided by the current average utility.
         // This number falls in the range of when this number = 1, the strategy is not changing (will be the case in rounds 1...LAST_X_ROUNDS)
-        // [0,0.9999] = conceding, lower = more conceding
+        // [0,1) = conceding, lower = more conceding
         // [1,1] = not deviating
-        // [1.00001, inf] = hardheaded, higher = more hardheaded
+        // (1, inf] = hardheaded, higher = more hardheaded
+        // [0, 1]
         return new Tuple<>(utilityOverLastRounds, overallUtility / utilityOverLastRounds);
+    }
+
+    public double getOpponentExpectedUtilityChange() {
+        // If no opponent bid has been made, their utility is not expected to change since no utility is known
+        if (this.estimatedUtilities.isEmpty()) {
+            return 0D;
+        }
+
+        // Determine weight based on opponent, in the beginning, the total negotiation is more important, at the end
+        // the last x bids are more important
+        double lastXWeight = this.session.getTime() * 2;
+        double totalWeight = 2 - lastXWeight;
+
+        // If the amount of bids the opponent has made is lower than the amount of rounds to check for
+        // take the amount of opponent bids instead
+        int x = Math.min(LAST_X_ROUNDS, this.estimatedUtilities.size());
+
+        double lastXChange = getAverageUtilityChange(x);
+        double totalChange = getAverageUtilityChange(0);
+
+        // Get weighted expected utility change of opponent
+        return (totalChange * totalWeight + lastXChange * lastXWeight) / 2;
     }
 
     private double getAverageUtilityChange(int amountOfRounds) {
