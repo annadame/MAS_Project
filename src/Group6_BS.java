@@ -29,9 +29,9 @@ public class Group6_BS extends OfferingStrategy {
         possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
         negotiationSession.setOutcomeSpace(possibleAgentBids);
 
-        startingBidUtility = 0.8; // Maybe change to 1
+        startingBidUtility = 1.0; // Maybe change to 1
         //TODO make targetUtility value dynamical in between stages, dependent on concession factor
-        targetUtility = 0.8;
+        targetUtility = 1.0;
         maxUtilityRange = 1.0;
         stageOneAllowedTime = 0.2;
         stageTwoAllowedTime = 0.8;
@@ -68,19 +68,22 @@ public class Group6_BS extends OfferingStrategy {
             System.out.println(opponentConcessionFactor.get1());
 
             // Base concession factor
-            double concessionFactor = (Math.pow(1.25, timePassed) - 1);
+            //double concessionFactor = (Math.pow(1.25, timePassed) - 1) / 10;
+            double concessionFactor = 0.0;
 
             if (true /*TODO add method for determining if opponent model is reliable and return bool*/) {
                 /*TODO discuss how we get concedingfactor of opponent (from opponent model strategy?)*/
                 // Add influence of concession factor of opponent
-                if (opponentConcessionFactor.get1() < concessionFactor) {
-                    concessionFactor = opponentConcessionFactor.get1();
+                if (opponentConcessionFactor.get1() > concessionFactor && opponentConcessionFactor.get1() > 0) {
+                    concessionFactor = opponentConcessionFactor.get1() / 2;
                 }
             }
 
-            targetUtility = 1 - concessionFactor;
+            targetUtility = targetUtility - concessionFactor;
             // Add Perlin(or something like it) noise
-            targetUtility = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 20);
+            //double targetUtilityWithNoise = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 20);
+            //System.out.println("utility stage 2:" + targetUtility);
+            //return possibleAgentBids.getBidNearUtility(targetUtilityWithNoise);
             return possibleAgentBids.getBidNearUtility(targetUtility);
         } else if (timePassed < stageThreeAllowedTime) {
             // stage 3
@@ -102,9 +105,13 @@ public class Group6_BS extends OfferingStrategy {
                 }
             }
 
+            //lower maximum checked utility of agent so not all bids that have been previously checked are checked again
             maxUtilityRange = targetUtility;
-            targetUtility -= 0.05; //TODO: Make dynamically based on time
-            targetUtility -= (Math.pow(1.65, timePassed) - 1) / 10;
+            targetUtility -= 0.01; //TODO: Make dynamically based on time, delete this line later
+
+            System.out.println("utility stage 4:" + targetUtility);
+            //TODO check this for what works good, now doesn't work correctly yet
+            //targetUtility -= (Math.pow(1.65, timePassed) - 1) / 10;
             return bestOpponentBid;
         }
     }
