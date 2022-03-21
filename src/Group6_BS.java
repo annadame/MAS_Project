@@ -78,7 +78,7 @@ public class Group6_BS extends OfferingStrategy {
             double noise = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 100);
 
             System.out.println("Stage 2 = " + possibleAgentBids.getBidNearUtility(noise).getMyUndiscountedUtil());
-            return possibleAgentBids.getBidNearUtility(noise);
+            return omStrategy.getBid(possibleAgentBids.getBidsinRange(new Range(noise, 1.0)));
         } else if (timePassed < stageThreeAllowedTime) {
             // Stage 3
             /*TODO possibly make scareTacticUtility a dynamic value*/

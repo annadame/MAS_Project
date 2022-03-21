@@ -13,7 +13,7 @@ public class Group6_AS extends AcceptanceStrategy {
     public void init(NegotiationSession negotiationSession, OfferingStrategy offeringStrategy,
                      OpponentModel opponentModel, Map<String, Double> parameters) throws Exception {
         super.init(negotiationSession, offeringStrategy, opponentModel, parameters);
-        thresholdUtility = 0.9;
+        thresholdUtility = 1.0; // TODO: test if 1 works better
         this.parameters = parameters;
         this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
 
