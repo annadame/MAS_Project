@@ -87,6 +87,9 @@ public class Group6_SAS {
     private double getAverageUtilityChange(int amountOfRounds) {
         double firstUtility = (amountOfRounds == 0) ? estimatedUtilities.get(0) : estimatedUtilities.get(estimatedUtilities.size() - amountOfRounds - 1);
         double lastUtility = estimatedUtilities.get(estimatedUtilities.size() - 1);
-        return (lastUtility - firstUtility) / estimatedUtilities.size();
+        
+        if (amountOfRounds == 0) amountOfRounds = estimatedUtilities.size();
+
+        return (lastUtility - firstUtility) / amountOfRounds;
     }
 }
