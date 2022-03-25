@@ -17,6 +17,7 @@ public class Group6_BS extends OfferingStrategy {
     private double stageTwoAllowedTime;
     private double stageThreeAllowedTime;
     private double scareTacticUtility;
+    private boolean stageThreeStarted;
 
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel opponentModel, OMStrategy omStrategy,
@@ -35,7 +36,7 @@ public class Group6_BS extends OfferingStrategy {
         stageOneAllowedTime = 0.2;
         stageTwoAllowedTime = 0.8;
         stageThreeAllowedTime = 0.85;
-        scareTacticUtility = 0.98;
+        stageThreeStarted = false;
 
         // Get starting bid by choosing a bid from all possible bids which is near desired starting utility
         startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
@@ -61,35 +62,53 @@ public class Group6_BS extends OfferingStrategy {
             return startingBid;
         } else if (timePassed < stageTwoAllowedTime) {
             // Stage 2
-            Tuple<Double, Double> opponentConcessionFactor = helper.getOpponentConcessionFactor();
+            double opponentExpectedUtilityChange = helper.getOpponentExpectedUtilityChange();
 
             // Base concession factor on time
-            double concessionFactor = (Math.pow(1.25, timePassed) - 1) / 100;
+            double concessionFactor = (Math.pow(1.25, timePassed) - 1) / 5000;
+            double prevConcessionFactor = (Math.pow(1.25, this.negotiationSession.getOwnBidHistory().getLastBidDetails().getTime()) - 1) / 5000;
 
-            if (true /*TODO add method for determining if opponent model is reliable and return bool*/) {
-                // If opponent is more hardheaded than us, then we get his concession factor decreased by 10%, to be even more hardheaded
-                if (opponentConcessionFactor.get1() < concessionFactor) {
-                    concessionFactor = opponentConcessionFactor.get1() / 1.1;
-                }
+
+            // If opponent is more hardheaded than us, then we get his concession factor decreased by 10%, to be even more hardheaded
+            if (concessionFactor - prevConcessionFactor > opponentExpectedUtilityChange) {
+                concessionFactor = opponentExpectedUtilityChange * 0.9;
             }
-            targetUtility = 1 - concessionFactor;
+            if (opponentExpectedUtilityChange < 0) {
+                concessionFactor = 0;
+            }
 
+            targetUtility -= concessionFactor;
             // Add noise
             double noise = targetUtility + ((Math.sin(timePassed * 100) + Math.sin((timePassed * 100) / 3)) / 100);
-
+            if (noise > 1.0) {
+                noise = 1.0D;
+            }
             System.out.println("Stage 2 = " + possibleAgentBids.getBidNearUtility(noise).getMyUndiscountedUtil());
             return omStrategy.getBid(possibleAgentBids.getBidsinRange(new Range(noise, 1.0)));
         } else if (timePassed < stageThreeAllowedTime) {
             // Stage 3
-            /*TODO possibly make scareTacticUtility a dynamic value*/
+            if (!stageThreeStarted) {
+                stageThreeStarted = true;
+
+                // Calculate scareTacticUtility based on the last bid of stage two
+                double lastBidOfStageTwoUtility = this.negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil();
+                scareTacticUtility = lastBidOfStageTwoUtility + (0.6 * (1 - lastBidOfStageTwoUtility));
+            }
+
             System.out.println("Stage 3 = " + scareTacticUtility);
+
             return possibleAgentBids.getBidNearUtility(scareTacticUtility);
         } else {
             // Stage 4
             BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(new Range(targetUtility, maxUtilityRange)));
-            maxUtilityRange = targetUtility;
-            targetUtility = 1 - (Math.pow(1.04, 100 - ((1 - timePassed) * 1000)) / 100);
 
+            // Make the change in utility larger when the opponent is not deviating a lot
+            int divisionFactor = 3000;
+            if (helper.getOpponentExpectedUtilityChange() < 0.0001) {
+                divisionFactor = 1000;
+            }
+
+            targetUtility -= (Math.pow(1.04, 100 - ((1 - timePassed) * 400)) / divisionFactor);
             System.out.println("Stage 4 = " + bestOpponentBid.getMyUndiscountedUtil());
             return bestOpponentBid;
         }

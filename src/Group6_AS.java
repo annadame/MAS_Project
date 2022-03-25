@@ -8,7 +8,6 @@ public class Group6_AS extends AcceptanceStrategy {
     private Group6_SAS helper;
     private double thresholdUtility;
     private Map<String, Double> parameters;
-    private double exponent = 5.0D;
 
     @Override
     public void init(NegotiationSession negotiationSession, OfferingStrategy offeringStrategy,
@@ -33,7 +32,7 @@ public class Group6_AS extends AcceptanceStrategy {
             thresholdUtility = negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * 0.95;
         }
 
-        System.out.println("Threshold utility = " + thresholdUtility);
+//        System.out.println("Threshold utility = " + thresholdUtility);
         return Actions.Reject;
     }
 
