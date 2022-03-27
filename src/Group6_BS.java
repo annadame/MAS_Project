@@ -20,9 +20,6 @@ public class Group6_BS extends OfferingStrategy {
     private double scareTacticUtility;
     private boolean stageThreeStarted;
 
-    double maxPerlin = 0;
-    double minPerlin = 0;
-
     @Override
     public void init(NegotiationSession negotiationSession, OpponentModel opponentModel, OMStrategy omStrategy,
                      Map<String, Double> parameters) throws Exception {
@@ -45,7 +42,6 @@ public class Group6_BS extends OfferingStrategy {
         stageTwoAllowedTime = 0.8;
         stageThreeAllowedTime = 0.825;
         stageThreeStarted = false;
-
 
         // Get starting bid by choosing a bid from all possible bids which is near desired starting utility
         startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
