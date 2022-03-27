@@ -27,6 +27,7 @@ public class Group6_OMS extends OMStrategy {
                 bestOpponentUtility = opponentUtility;
             }
         }
+
         return bestOpponentBid;
     }
 
