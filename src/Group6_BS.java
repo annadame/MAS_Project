@@ -18,6 +18,7 @@ public class Group6_BS extends OfferingStrategy {
     private double targetUtility;
     private double deviationRange;
     private double startingBidUtility;
+    private double acceptanceFactor;
     private double stageOneAllowedTime;
     private double stageTwoAllowedTime;
     private double stageThreeAllowedTime;
@@ -42,6 +43,7 @@ public class Group6_BS extends OfferingStrategy {
         this.startingBidUtility = 1.0;
         this.targetUtility = 1.0;
         this.deviationRange = 0.025;
+        this.acceptanceFactor = 0.95;
         this.stageOneAllowedTime = 0.2;
         this.stageTwoAllowedTime = 0.8;
         this.stageThreeAllowedTime = 0.825;
@@ -133,10 +135,14 @@ public class Group6_BS extends OfferingStrategy {
         // Stage 4
         BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(
                 new Range(targetUtility - deviationRange, targetUtility + deviationRange)));
-
+        BidDetails bestBidOpponentMade = negotiationSession.getOpponentBidHistory().getBestBidDetails();
         // No bid in range found, just get nearest to targetUtility
         if (bestOpponentBid == null) {
-            possibleAgentBids.getBidNearUtility(targetUtility);
+            bestOpponentBid = possibleAgentBids.getBidNearUtility(targetUtility);
+        }
+
+        if (bestBidOpponentMade.getMyUndiscountedUtil() > (negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * acceptanceFactor)) {
+            return bestBidOpponentMade;
         }
 
         // Make the change in utility larger when the opponent is not deviating a lot
@@ -147,6 +153,7 @@ public class Group6_BS extends OfferingStrategy {
 
         targetUtility -= (Math.pow(1.04, 100 - ((1 - timePassed) * 10000)) / divisionFactor);
         System.out.println("Stage 4 = " + targetUtility);
+
         return bestOpponentBid;
     }
 

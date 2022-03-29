@@ -26,24 +26,12 @@ public class Group6_AS extends AcceptanceStrategy {
 
     @Override
     public Actions determineAcceptability() {
+        if (negotiationSession.getOpponentBidHistory().getBestBidDetails().getMyUndiscountedUtil() > thresholdUtility) {
+            return Actions.Reject;
+        }
+
         BidDetails opponentsBid = negotiationSession.getOpponentBidHistory().getLastBidDetails();
-        double timePassed = negotiationSession.getTimeline().getTime();
-        if (timePassed > 0.85 && doRoundTimeMeasure) {
-            if (timePassedList.size() < 10) {
-                timePassedList.add(timePassed);
-            } else {
-                averageRoundTime = (timePassedList.get(timePassedList.size() - 1) - timePassedList.get(0)) / timePassedList.size();
-                doRoundTimeMeasure = false;
-            }
-        }
-
-        if (1.0 - (averageRoundTime * 10) <= timePassed) {
-            acceptanceFactor -= 0.05;
-            //TODO check for best utility in opponents bids made previously (in bidding strategy)
-        }
-
         if (opponentsBid.getMyUndiscountedUtil() >= thresholdUtility) {
-            System.out.println(timePassed);
             return Actions.Accept;
         }
 
