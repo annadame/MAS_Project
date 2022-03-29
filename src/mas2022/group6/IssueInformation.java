@@ -1,3 +1,5 @@
+package mas2022.group6;
+
 import genius.core.issue.Value;
 import genius.core.issue.ValueDiscrete;
 import genius.core.list.Tuple;

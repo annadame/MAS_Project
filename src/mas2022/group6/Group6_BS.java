@@ -1,3 +1,5 @@
+package mas2022.group6;
+
 import genius.core.bidding.BidDetails;
 import genius.core.boaframework.*;
 import genius.core.misc.Range;
@@ -76,10 +78,17 @@ public class Group6_BS extends OfferingStrategy {
     }
 
     public BidDetails stageOne() {
-        System.out.println("Stage 1 = " + startingBid.getMyUndiscountedUtil());
         return startingBid;
     }
 
+    /**
+     * In stage two, we calculate the amount of utility that we want to concede in this round, if this amount is higher
+     * than the amount we estimate the opponent will concede, we adapt our concession to that of the opponent's.
+     * Afterwards, to confuse the opponent an amount of Perlin noise is added, lulling the opponent
+     * into thinking we are being more conceding/hardheaded than we are
+     * @param timePassed amount of time that has passed since the beginning of the negotiation
+     * @return The BidDetails of the selected bid
+     */
     public BidDetails stageTwo(double timePassed) {
         double opponentExpectedUtilityChange = this.getOpponentExpectedUtilityChange();
 
@@ -106,14 +115,17 @@ public class Group6_BS extends OfferingStrategy {
             noise = 1.0D;
         }
 
-        System.out.println("Stage 2 = " + possibleAgentBids.getBidNearUtility(noise).getMyUndiscountedUtil());
-
         BidDetails bid = omStrategy.getBid(possibleAgentBids.getBidsinRange(
                 new Range(noise - deviationRange, noise + deviationRange)));
 
         return (bid == null) ? possibleAgentBids.getBidNearUtility(noise) : bid;
     }
 
+    /**
+     * In stage three, the agent calculates a utility value to use as a scare tactic based on the last utility
+     * used in stage two, the agent then statically offers the bid closest to this utility
+     * @return The BidDetails of the selected bid
+     */
     public BidDetails stageThree() {
         if (!stageThreeStarted) {
             stageThreeStarted = true;
@@ -126,11 +138,18 @@ public class Group6_BS extends OfferingStrategy {
             targetUtility = scareTacticUtility;
         }
 
-        System.out.println("Stage 3 = " + scareTacticUtility);
-
         return possibleAgentBids.getBidNearUtility(scareTacticUtility);
     }
 
+    /**
+     * In stage four, the agent returns to the targetUtility from stage 2 and finds a bid there,
+     * if no bid is found in the determined range around the targetUtility, the nearest bid to the
+     * targetUtility is used. If this bid has a lower utility for us than any other bid the opponent has made,
+     * we just offer the opponent that bid. The targetUtility is also lowered for the next round, the amount it is
+     * lowered by increases when the opponent is being very hardheaded
+     * @param timePassed amount of time that has passed since the beginning of the negotiation
+     * @return The BidDetails of the selected bid
+     */
     public BidDetails stageFour(double timePassed) {
         // Stage 4
         BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(
@@ -151,20 +170,27 @@ public class Group6_BS extends OfferingStrategy {
             divisionFactor = 1000D;
         }
 
-        targetUtility -= (Math.pow(1.04, 100 - ((1 - timePassed) * 10000)) / divisionFactor);
-        System.out.println("Stage 4 = " + targetUtility);
+        targetUtility -= (Math.pow(1.04, 100 - ((1 - timePassed) * 5000)) / divisionFactor);
 
         return bestOpponentBid;
     }
 
+    /**
+     * Add to the estimatedUtilities list if a bid was made
+     */
     private void updateOpponentExpectedUtilityChange() {
-        // Update SAS for concession factor with evaluation of last opponent bid
         double opponentBidEvaluation = this.opponentModel.getBidEvaluation(this.negotiationSession.getOpponentBidHistory().getLastBid());
         if (opponentBidEvaluation != -1) {
             this.estimatedUtilities.add(opponentBidEvaluation);
         }
     }
 
+    /**
+     * Calculates the amount we expect the opponent to deviate, given our estimations of their utility over
+     * LAST_X_ROUNDS compared to the last 100 rounds. The estimation is calculated with a weight that increases
+     * towards LAST_X_ROUNDS The further the negotiation is in time
+     * @return Percentage change the opponent is estimated to make
+     */
     public double getOpponentExpectedUtilityChange() {
         // If no opponent bid has been made, their utility is not expected to change since no utility is known
         if (this.estimatedUtilities.isEmpty()) {
@@ -188,6 +214,10 @@ public class Group6_BS extends OfferingStrategy {
         return (totalChange * totalWeight + lastXChange * lastXWeight) / 2;
     }
 
+    /**
+     * @param amountOfRounds for which the average should be calculated
+     * @return average change in utility over the amount of rounds
+     */
     private double getAverageUtilityChange(int amountOfRounds) {
         double firstUtility = (amountOfRounds == 0) ? estimatedUtilities.get(0) : estimatedUtilities.get(estimatedUtilities.size() - amountOfRounds);
         double lastUtility = estimatedUtilities.get(estimatedUtilities.size() - 1);
@@ -199,6 +229,6 @@ public class Group6_BS extends OfferingStrategy {
 
     @Override
     public String getName() {
-        return "Group 6 Bidding Strategy";
+        return "Group 6 - Roosevelt - Bidding Strategy";
     }
 }

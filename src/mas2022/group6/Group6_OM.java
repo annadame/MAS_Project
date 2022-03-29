@@ -1,3 +1,5 @@
+package mas2022.group6;
+
 import genius.core.Bid;
 import genius.core.boaframework.NegotiationSession;
 import genius.core.boaframework.OpponentModel;
@@ -39,17 +41,24 @@ public class Group6_OM extends OpponentModel {
         updatePreferences();
     }
 
+    /**
+     * For every issue in the bid, update the frequency in the frequencyModel
+     * @param bid The most recently offered bid by the opponent
+     */
     private void updateFrequencyModel(Bid bid) {
         HashMap<Integer, Value> currentIssues = bid.getValues();
 
-        // For every issue in the bid, update the frequency in the frequencyModel
         currentIssues.forEach((issueId, value) -> frequencyModel.get(issueId).update((ValueDiscrete) value));
     }
 
+    /**
+     * Update value weights using frequencyModel, take highest frequency and divide it by amount of bids/rounds in total
+     * Loop through frequencyModel, for each issue, sum up frequencies and keep track of highest frequency,
+     * finally, divide highest frequency by total frequency
+     *
+     * Afterwards, the issue weights are updated using the value weights.
+     */
     private void updatePreferences() {
-        // Update value weights using frequencyModel, take highest frequency and divide it by amount of bids/rounds in total
-        // Loop through frequencyModel, for each issue, sum up frequencies and keep track of highest frequency,
-        // finally, divide highest frequency by total frequency
         double totalRelativeValue = 0D;
         for (Map.Entry<Integer, IssueInformation> entry : frequencyModel.entrySet()) {
             totalRelativeValue += entry.getValue().getHighestRelativeValue(bidHistory.size()).get2();
@@ -61,6 +70,12 @@ public class Group6_OM extends OpponentModel {
         }
     }
 
+    /**
+     * The estimated utility for the opponent is calculated by looking at the weighting for each issue and
+     * the values in the bid.
+     * @param bid The opponent bid that should be evaluated
+     * @return Return estimated utility value for opponent bid
+     */
     @Override
     public double getBidEvaluation(Bid bid) {
         // In case we make first bid there is no bid to evaluate, return 1
@@ -84,12 +99,11 @@ public class Group6_OM extends OpponentModel {
             expectedUtility += (weight / totalWeight) * frequencyModel.get(entry.getKey()).getRelativeValue(entry.getValue(), bidHistory.size());
         }
 
-        // Return estimated utility value for opponent bid
         return expectedUtility;
     }
 
     @Override
     public String getName() {
-        return "Group 6 Opponent Model";
+        return "Group 6 - Roosevelt - Opponent Model";
     }
 }

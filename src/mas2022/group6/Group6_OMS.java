@@ -1,3 +1,5 @@
+package mas2022.group6;
+
 import genius.core.bidding.BidDetails;
 import genius.core.boaframework.NegotiationSession;
 import genius.core.boaframework.OMStrategy;
@@ -13,10 +15,16 @@ public class Group6_OMS extends OMStrategy {
         super.init(negotiationSession, model, parameters);
     }
 
+    /**
+     * Gets bid in a range that we think is best for the opponent
+     * @param bidsInRange range for bids
+     * @return BidDetails of the best bid
+     */
     @Override
     public BidDetails getBid(List<BidDetails> bidsInRange) {
         double bestOpponentUtility = 0.0;
         BidDetails bestOpponentBid = null;
+
         for (BidDetails agentBid: bidsInRange) {
             // Get the utility of the opponent for these certain values of issues
             double opponentUtility = model.getBidEvaluation(agentBid.getBid());
@@ -33,13 +41,13 @@ public class Group6_OMS extends OMStrategy {
 
     @Override
     public boolean canUpdateOM() {
-        // Possibly add maximum amount of bids as parameter (100 in CUHK OM, maybe have it depend on time passed in negotiation)
+        // Model is always updated
         return true;
     }
 
     @Override
     public String getName() {
-        return "Group 6 Opponent Model Strategy";
+        return "Group 6 - Roosevelt - Opponent Model Strategy";
     }
 
 }
