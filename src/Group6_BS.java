@@ -2,14 +2,18 @@ import genius.core.bidding.BidDetails;
 import genius.core.boaframework.*;
 import genius.core.misc.Range;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Group6_BS extends OfferingStrategy {
 
+    private final int LAST_X_ROUNDS = 5;
+
     private SortedOutcomeSpace possibleAgentBids;
-    private Group6_SAS helper;
     private NoiseGenerator noiseGenerator;
     private BidDetails startingBid;
+    private List<Double> estimatedUtilities;
 
     private double targetUtility;
     private double deviationRange;
@@ -26,25 +30,25 @@ public class Group6_BS extends OfferingStrategy {
         // Call default init of super class
         super.init(negotiationSession, opponentModel, omStrategy, parameters);
 
-        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
+        this.estimatedUtilities = new ArrayList<>();
 
         // Constructor gets random seed
         this.noiseGenerator = new NoiseGenerator();
 
         // Determine all possible bids of the negotiation
-        possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
-        negotiationSession.setOutcomeSpace(possibleAgentBids);
+        this.possibleAgentBids = new SortedOutcomeSpace(negotiationSession.getUtilitySpace());
+        this.negotiationSession.setOutcomeSpace(possibleAgentBids);
 
-        startingBidUtility = 1.0;
-        targetUtility = 1.0;
-        deviationRange = 0.025;
-        stageOneAllowedTime = 0.2;
-        stageTwoAllowedTime = 0.8;
-        stageThreeAllowedTime = 0.825;
-        stageThreeStarted = false;
+        this.startingBidUtility = 1.0;
+        this.targetUtility = 1.0;
+        this.deviationRange = 0.025;
+        this.stageOneAllowedTime = 0.2;
+        this.stageTwoAllowedTime = 0.8;
+        this.stageThreeAllowedTime = 0.825;
+        this.stageThreeStarted = false;
 
         // Get starting bid by choosing a bid from all possible bids which is near desired starting utility
-        startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
+        this.startingBid = possibleAgentBids.getBidNearUtility(startingBidUtility);
     }
 
     @Override
@@ -54,11 +58,8 @@ public class Group6_BS extends OfferingStrategy {
 
     @Override
     public BidDetails determineNextBid() {
-        // Update SAS for concession factor with evaluation of last opponent bid
-        double opponentBidEvaluation = opponentModel.getBidEvaluation(this.negotiationSession.getOpponentBidHistory().getLastBid());
-        if (opponentBidEvaluation != -1) {
-            helper.update(opponentBidEvaluation);
-        }
+        this.updateOpponentExpectedUtilityChange();
+
         double timePassed = negotiationSession.getTimeline().getTime();
 
         if (timePassed < stageOneAllowedTime) {
@@ -78,7 +79,7 @@ public class Group6_BS extends OfferingStrategy {
     }
 
     public BidDetails stageTwo(double timePassed) {
-        double opponentExpectedUtilityChange = helper.getOpponentExpectedUtilityChange();
+        double opponentExpectedUtilityChange = this.getOpponentExpectedUtilityChange();
 
         // Base concession factor on time
         double concessionDenominator = 1000D;
@@ -89,6 +90,8 @@ public class Group6_BS extends OfferingStrategy {
         if (concessionFactor - prevConcessionFactor > opponentExpectedUtilityChange) {
             concessionFactor = opponentExpectedUtilityChange * 0.9;
         }
+
+        // If opponent is increasing in utility we stay at the same utility
         if (opponentExpectedUtilityChange < 0) {
             concessionFactor = 0;
         }
@@ -106,7 +109,7 @@ public class Group6_BS extends OfferingStrategy {
         BidDetails bid = omStrategy.getBid(possibleAgentBids.getBidsinRange(
                 new Range(noise - deviationRange, noise + deviationRange)));
 
-        return (bid == null) ? negotiationSession.getOutcomeSpace().getBidNearUtility(noise) : bid;
+        return (bid == null) ? possibleAgentBids.getBidNearUtility(noise) : bid;
     }
 
     public BidDetails stageThree() {
@@ -128,20 +131,63 @@ public class Group6_BS extends OfferingStrategy {
 
     public BidDetails stageFour(double timePassed) {
         // Stage 4
-        BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(new Range(targetUtility - deviationRange, targetUtility + deviationRange)));
+        BidDetails bestOpponentBid = omStrategy.getBid(possibleAgentBids.getBidsinRange(
+                new Range(targetUtility - deviationRange, targetUtility + deviationRange)));
+
+        // No bid in range found, just get nearest to targetUtility
         if (bestOpponentBid == null) {
-            negotiationSession.getOutcomeSpace().getBidNearUtility(targetUtility);
+            possibleAgentBids.getBidNearUtility(targetUtility);
         }
 
         // Make the change in utility larger when the opponent is not deviating a lot
         double divisionFactor = 3000D;
-        if (helper.getOpponentExpectedUtilityChange() < 0.0001) {
+        if (this.getOpponentExpectedUtilityChange() < 0.0001) {
             divisionFactor = 1000D;
         }
 
         targetUtility -= (Math.pow(1.04, 100 - ((1 - timePassed) * 10000)) / divisionFactor);
         System.out.println("Stage 4 = " + targetUtility);
         return bestOpponentBid;
+    }
+
+    private void updateOpponentExpectedUtilityChange() {
+        // Update SAS for concession factor with evaluation of last opponent bid
+        double opponentBidEvaluation = this.opponentModel.getBidEvaluation(this.negotiationSession.getOpponentBidHistory().getLastBid());
+        if (opponentBidEvaluation != -1) {
+            this.estimatedUtilities.add(opponentBidEvaluation);
+        }
+    }
+
+    public double getOpponentExpectedUtilityChange() {
+        // If no opponent bid has been made, their utility is not expected to change since no utility is known
+        if (this.estimatedUtilities.isEmpty()) {
+            return 0D;
+        }
+
+        // Determine weight based on opponent, in the beginning, the total negotiation is more important, at the end
+        // the last x bids are more important
+        double lastXWeight = this.negotiationSession.getTime() * 2;
+        double totalWeight = 2 - lastXWeight;
+
+        // If the amount of bids the opponent has made is lower than the amount of rounds to check for
+        // take the amount of opponent bids instead
+        int x = Math.min(LAST_X_ROUNDS, this.estimatedUtilities.size());
+        int y = Math.min(100, this.estimatedUtilities.size());
+
+        double lastXChange = getAverageUtilityChange(x);
+        double totalChange = getAverageUtilityChange(y);
+
+        // Get weighted expected utility change of opponent
+        return (totalChange * totalWeight + lastXChange * lastXWeight) / 2;
+    }
+
+    private double getAverageUtilityChange(int amountOfRounds) {
+        double firstUtility = (amountOfRounds == 0) ? estimatedUtilities.get(0) : estimatedUtilities.get(estimatedUtilities.size() - amountOfRounds);
+        double lastUtility = estimatedUtilities.get(estimatedUtilities.size() - 1);
+
+        if (amountOfRounds == 0) amountOfRounds = estimatedUtilities.size();
+
+        return (lastUtility - firstUtility) / amountOfRounds;
     }
 
     @Override

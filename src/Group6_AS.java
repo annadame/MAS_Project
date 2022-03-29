@@ -5,17 +5,13 @@ import java.util.Map;
 
 public class Group6_AS extends AcceptanceStrategy {
 
-    private Group6_SAS helper;
     private double thresholdUtility;
-    private Map<String, Double> parameters;
 
     @Override
     public void init(NegotiationSession negotiationSession, OfferingStrategy offeringStrategy,
                      OpponentModel opponentModel, Map<String, Double> parameters) throws Exception {
         super.init(negotiationSession, offeringStrategy, opponentModel, parameters);
         this.thresholdUtility = 1.0;
-        this.parameters = parameters;
-        this.helper = Group6_SAS.getInstance(negotiationSession, parameters);
     }
 
     @Override
@@ -27,12 +23,10 @@ public class Group6_AS extends AcceptanceStrategy {
             return Actions.Accept;
         }
 
-        // TODO: Look into rejecting if opponent is being conceding (based on time or other variables)
         if (!negotiationSession.getOwnBidHistory().isEmpty()) {
             thresholdUtility = negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * 0.95;
         }
 
-//        System.out.println("Threshold utility = " + thresholdUtility);
         return Actions.Reject;
     }
 

@@ -78,7 +78,7 @@ public class Group6_OM extends OpponentModel {
             totalWeight += entry.getValue().getWeight();
         }
 
-        // Get RelativeValue for current Issue,
+        // Get RelativeValue for current Issue
         for (Map.Entry<Integer, Value> entry : currentIssues.entrySet()) {
             weight = frequencyModel.get(entry.getKey()).getWeight();
             expectedUtility += (weight / totalWeight) * frequencyModel.get(entry.getKey()).getRelativeValue(entry.getValue(), bidHistory.size());
