@@ -27,17 +27,17 @@ public class Group6_AS extends AcceptanceStrategy {
      */
     @Override
     public Actions determineAcceptability() {
-        if (negotiationSession.getOpponentBidHistory().getBestBidDetails().getMyUndiscountedUtil() > thresholdUtility) {
+        if (!negotiationSession.getOwnBidHistory().isEmpty()) {
+            thresholdUtility = negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * acceptanceFactor;
+        }
+
+        if (negotiationSession.getOpponentBidHistory().getBestBidDetails().getMyUndiscountedUtil() >= thresholdUtility) {
             return Actions.Reject;
         }
 
         BidDetails opponentsBid = negotiationSession.getOpponentBidHistory().getLastBidDetails();
         if (opponentsBid.getMyUndiscountedUtil() >= thresholdUtility) {
             return Actions.Accept;
-        }
-
-        if (!negotiationSession.getOwnBidHistory().isEmpty()) {
-            thresholdUtility = negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * acceptanceFactor;
         }
 
         return Actions.Reject;

@@ -2,10 +2,15 @@ package mas2022.group6;
 
 import java.util.Random;
 
-// Code gotten from:
-// https://gist.github.com/alksily/7a85a1898e65c936f861ee93516e397d
-// See https://en.wikipedia.org/wiki/Perlin_noise for more info
-// Credits to Alksily
+
+
+
+/**
+ * Code gotten from:
+ * https://gist.github.com/alksily/7a85a1898e65c936f861ee93516e397d
+ * See https://en.wikipedia.org/wiki/Perlin_noise for more info
+ * Credits to Alksily (https://gist.github.com/alksily)
+ */
 public class NoiseGenerator {
     private double seed;
     private long default_size;
