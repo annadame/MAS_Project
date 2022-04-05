@@ -9,6 +9,7 @@ public class Group6_AS extends AcceptanceStrategy {
 
     private double thresholdUtility;
     private double acceptanceFactor;
+    private int timesRejected;
 
     @Override
     public void init(NegotiationSession negotiationSession, OfferingStrategy offeringStrategy,
@@ -16,6 +17,7 @@ public class Group6_AS extends AcceptanceStrategy {
         super.init(negotiationSession, offeringStrategy, opponentModel, parameters);
         this.thresholdUtility = 1.0;
         this.acceptanceFactor = 0.95;
+        this.timesRejected = 0;
     }
 
     /**
@@ -31,7 +33,10 @@ public class Group6_AS extends AcceptanceStrategy {
             thresholdUtility = negotiationSession.getOwnBidHistory().getLastBidDetails().getMyUndiscountedUtil() * acceptanceFactor;
         }
 
-        if (negotiationSession.getOpponentBidHistory().getBestBidDetails().getMyUndiscountedUtil() >= thresholdUtility) {
+        // Stop rejecting based on this rule after the acceptance strategy has rejected it twice to
+        // ensure compatibility with agents that have the same strategy
+        if (negotiationSession.getOpponentBidHistory().getBestBidDetails().getMyUndiscountedUtil() >= thresholdUtility && timesRejected < 2) {
+            timesRejected++;
             return Actions.Reject;
         }
 
